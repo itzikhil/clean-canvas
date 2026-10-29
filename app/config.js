@@ -25,6 +25,9 @@ window.CONFIG = {
   // Calendars, one line per person: [{name, ics, meetingsOnly, hide}] in config.local.js (README: "Calendars").
   calendars: [],
 
+  // Test hooks (benchmark, launch/Luna tests, reports to a computer): off; set true in config.local.js to use them.
+  debug: false,
+
   settingsApp: 'com.palm.app.settings',
   lgHomeApp: 'com.webos.app.home',
 

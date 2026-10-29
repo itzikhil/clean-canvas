@@ -25,7 +25,7 @@ try {
 
 var socket = null, ready = false, buf = null, text = '', nextId = 1, waiting = {}, queue = [];
 var foreground = '', takeover = true, lgMode = false, restarting = false;
-var history = [], connects = 0, pausedUntil = 0;   // the last foreground changes and what the helper did, for status()
+var history = [], connects = 0;   // the last foreground changes and what the helper did, for status()
 
 function note(id, action) {
   history.push({t: new Date().toISOString().slice(11, 23), app: id, action: action});
@@ -71,7 +71,7 @@ function onMessage(m) {
 }
 
 function connect() {
-  if (socket || Date.now() < pausedUntil) return;
+  if (socket) return;
   buf = buffer([]);
   var open = false;
   socket = tls.connect({host: '127.0.0.1', port: 3001, rejectUnauthorized: false}, function () {
@@ -113,7 +113,7 @@ function connect() {
     ready = false;
     for (var id in waiting) waiting[id](null);
     waiting = {};
-    setTimeout(connect, Math.max(3000, pausedUntil - Date.now() + 100));
+    setTimeout(connect, 3000);
   });
 }
 
@@ -224,8 +224,8 @@ service.register('screenOn', function (message) {
   });
 });
 
-// {host, package}: wake the Fire TV and open the app's TV launcher activity. {host, command}: any shell command
-// (used by tools to list packages).
+// {host, package}: wake the Fire TV and open the app's TV launcher activity. Only that: any app on the TV can call
+// this service, so it takes no shell command, only a package name, and only a host on the local network.
 service.register('firetv', function (message) {
   var p = message.payload;
   // Fire OS refuses `monkey` here ("SYS_KEYS has no physical keys"), so resolve the app's TV launch activity
@@ -234,20 +234,16 @@ service.register('firetv', function (message) {
     return 'cmd package resolve-activity --brief -a android.intent.action.MAIN -c android.intent.category.' + cat +
       ' ' + p.package + ' | tail -1';
   };
-  var cmd = p.command || ('input keyevent KEYCODE_WAKEUP; c=$(' + resolve('LEANBACK_LAUNCHER') + '); ' +
-    'case "$c" in */*) ;; *) c=$(' + resolve('LAUNCHER') + ');; esac; am start -n "$c"');
-  if (!/^[\w.]+$/.test(p.package || 'x') || !p.host) { message.respond({returnValue: false, errorText: 'bad request'}); return; }
+  var local = /^(10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)\d{1,3}\.\d{1,3}(\.\d{1,3})?$/.test(String(p.host || ''));
+  if (!/^[A-Za-z][\w]*(\.[\w]+)+$/.test(String(p.package || '')) || !local) {
+    message.respond({returnValue: false, errorText: 'bad request'});
+    return;
+  }
+  var cmd = 'input keyevent KEYCODE_WAKEUP; c=$(' + resolve('LEANBACK_LAUNCHER') + '); ' +
+    'case "$c" in */*) ;; *) c=$(' + resolve('LAUNCHER') + ');; esac; am start -n "$c"';
   adb.shell(p.host, cmd, {key: adbKey, pub: adbPub}, function (err, out) {
     message.respond(err ? {returnValue: false, errorText: err} : {returnValue: true, output: out.slice(-2000)});
   });
-});
-
-// Test only: drop the SSAP connection for `seconds`, to measure what it costs the TV.
-service.register('pause', function (message) {
-  pausedUntil = Date.now() + (message.payload.seconds || 60) * 1000;
-  if (socket) socket.destroy();
-  setTimeout(connect, (message.payload.seconds || 60) * 1000 + 100);
-  message.respond({returnValue: true});
 });
 
 // {url}: an https text file the page can't read itself for lack of CORS (a published .ics calendar). Follows up to
@@ -283,11 +279,6 @@ service.register('extendDevMode', function (message) {
     setTimeout(function () { launchApp(function () { note(APP, 'back after extend'); }); }, 6000);
     message.respond({returnValue: ok});
   });
-});
-
-service.register('powerOnMode', function (message) {
-  powerOnMode = message.payload.mode || powerOnMode;
-  message.respond({returnValue: true, mode: powerOnMode});
 });
 
 service.register('status', function (message) {

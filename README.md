@@ -131,7 +131,7 @@ tools/      setup.py, install.py, build.py, list_apps.py, tv_settings.py, firetv
 
 ## Measured on the TV
 
-The page renders at 4K on this TV (`devicePixelRatio` 2), so every full-screen effect was measured before it stayed in. The tools are the built-in benchmark (`--params '{"bench":true,"report":"http://<computer>:8765/"}'` with `tools/bench_listen.py`) and `/proc` over dev-mode SSH.
+The page renders at 4K on this TV (`devicePixelRatio` 2), so every full-screen effect was measured before it stayed in. The tools are the built-in benchmark (with `debug: true` in `config.local.js`: `--params '{"bench":true,"report":"http://<computer>:8765/"}'` and `tools/bench_listen.py`) and `/proc` over dev-mode SSH.
 
 | | Result |
 |---|---|
@@ -140,6 +140,10 @@ The page renders at 4K on this TV (`devicePixelRatio` 2), so every full-screen e
 | Idle CPU, launcher + helper | ~5% of one core, about 40 MB RAM |
 | Slow Ken Burns zoom (now off everywhere) | cost 3–6 fps while browsing, ~75% of a core in the screensaver |
 | Home button → back in Clean Canvas | 0.1–0.6 s from an app, ~1–1.5 s from HDMI |
+
+## Security and privacy
+
+The helper service accepts only narrow requests, test hooks are off by default, and keys and personal settings never enter git. What leaves your home: weather (your place's coordinates, to Open-Meteo), paintings (The Met, through images.weserv.nl) and your calendar links. Details and how to report a problem: [SECURITY.md](SECURITY.md).
 
 ## Credits and licence
 

@@ -437,7 +437,9 @@
     if (zone === 'drawer') closeDrawer();
     if (saver) exitSaver();
     noteInput();
-    var p = e.detail || {};
+    // Test hooks (benchmark, reports to a computer) only with debug: true in config.local.js: any app on the TV can
+    // launch this one with parameters, and the reports could otherwise send calendar text to any address.
+    var p = C.debug ? (e.detail || {}) : {};
     if (p.bench) { flags(p.flags); bench(p.report); }
     if (p.launchTest) launchTest(p.launchTest, p.report);
     if (p.lunaTest) lunaTest(p.lunaTest, p.report);
@@ -559,7 +561,7 @@
       });
   }
 
-  var lp = launchParams();
+  var lp = C.debug ? launchParams() : {};
   if (lp.bench) { flags(lp.flags); bench(lp.report); }
   if (lp.launchTest) launchTest(lp.launchTest, lp.report);
   if (lp.lunaTest) lunaTest(lp.lunaTest, lp.report);
