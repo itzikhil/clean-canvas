@@ -4,6 +4,16 @@
 
 LG's home screen is busy: sponsored rows, recommendations, an app store on the front page. Clean Canvas replaces it with a public-domain painting, a clock, the weather, your next calendar event and one row of the apps you actually use. When nobody touches the remote, it becomes a gallery: the painting full screen, with a small museum-style label.
 
+![The home screen: a painting, the clock, weather, calendars and one row of apps](docs/screenshots/home.jpg)
+
+| Gallery mode | All apps |
+|---|---|
+| ![Gallery mode: the painting full screen with a museum-style label](docs/screenshots/gallery.jpg) | ![All apps, one press down from the dock](docs/screenshots/drawer.jpg) |
+| **Inputs** | **Night mode** |
+| ![The Inputs menu with named HDMI ports](docs/screenshots/picker.jpg) | ![Night mode: darker art and softer text after sunset](docs/screenshots/night.jpg) |
+
+*Screenshots use made-up names and events. App logos belong to their owners.*
+
 It installs through LG's own Developer Mode. Nothing is rooted, and nothing on the TV is removed. Uninstalling brings back exactly what was there.
 
 Built and measured on an LG 75QNED816RE (webOS 24, 2024); it should work on webOS 6 and newer.

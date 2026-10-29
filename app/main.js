@@ -564,6 +564,20 @@
   if (lp.launchTest) launchTest(lp.launchTest, lp.report);
   if (lp.lunaTest) lunaTest(lp.lunaTest, lp.report);
   if (lp.eventLog) eventLog(lp.eventLog);
+
+  // Screenshots (desktop browser only): ?demo=home|drawer|picker|gallery|night
+  var demo = !TV.webos && /[?&]demo=(\w+)/.exec(location.search);
+  if (demo) {
+    setTimeout(function () {
+      var m = demo[1];
+      root.classList.toggle('night', m === 'night');
+      if (m === 'home' || m === 'night') focus('dock', 2);
+      else if (m === 'drawer') { openDrawer(); focus('drawer', 8); }
+      else if (m === 'picker') { focus('top', 0); openPicker(); focus('picker', 2); }
+      else if (m === 'gallery') enterSaver();
+      clearTimeout(clockTimer);   // hold the night/day state for the shot
+    }, 3000);
+  }
   // Page boot timings (ms since navigation start), kept for the timingReport test param.
   var boot = null;
   window.addEventListener('load', function () {
