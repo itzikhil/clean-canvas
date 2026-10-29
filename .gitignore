@@ -1,0 +1,11 @@
+dist/
+tools/apps.local.json
+__pycache__/
+.DS_Store
+# Personal, per-TV files (generated or private): never in git
+app/config.local.js
+app/apps.js
+app/icons/
+tools/tv.local.json
+app/*.local.ics
+app/*.bak

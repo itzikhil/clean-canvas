@@ -1,0 +1,453 @@
+@font-face {
+  font-family: 'Inter';
+  /* Inter subset: Latin, weights 200-600 (82 KB instead of 880 KB; see README). */
+  src: url('fonts/Inter-subset.ttf') format('truetype');
+  font-weight: 200 600;
+  font-display: block;
+}
+
+/* Layout constants (px). main.js reads the dock's rect once to align its blurred backdrop. */
+:root {
+  --safe: 90px;
+  --tile-w: 272px;
+  --tile-h: 170px;
+  --gap: 40px;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+html, body {
+  margin: 0;
+  width: 1920px;
+  height: 1080px;
+  overflow: hidden;
+  background: #0b0b0c;
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+
+/* D-pad only: the Magic Remote pointer is invisible and inert. */
+* { cursor: none !important; }
+body { pointer-events: none; }
+
+/* ---------- Wallpaper ---------- */
+
+#wall, #shade { position: absolute; inset: 0; }
+.slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.slide.on { opacity: 1; }
+.slide.gone { visibility: hidden; }
+/*
+ * The page renders at 4K (devicePixelRatio 2) on this TV, so every animated full-screen layer is expensive. Measured on
+ * the TV: Ken Burns on the wallpaper and the dock's blur copy cost 3-6 fps during focus moves. So only the sharp
+ * wallpaper zooms (the heavily blurred dock copy stays put; the drift is invisible), and the zoom pauses while the
+ * remote is in use, during a crossfade, and while the picker is open (html.still, set by main.js).
+ */
+.slide img, .blur {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1920px;
+  height: 1080px;
+}
+.slide img {
+  transform-origin: 960px 540px;
+  animation: kb 60s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.still .slide img { animation-play-state: paused; }
+.slide img { display: block; }
+@keyframes kb {
+  from { transform: scale(1); }
+  to { transform: scale(1.05); }
+}
+
+/* Static legibility gradient behind the clock (top-left) and the dock (bottom). */
+#shade {
+  background:
+    radial-gradient(ellipse 1100px 620px at 0% 0%, rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0) 72%),
+    linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0) 48%);
+}
+
+/* ---------- Clock ---------- */
+
+#clock {
+  position: absolute;
+  left: var(--safe);
+  top: 70px;
+}
+#time {
+  font-size: 210px;
+  font-weight: 200;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin-left: -10px;
+}
+#date {
+  margin-top: 10px;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+
+#wx {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  font-size: 24px;
+  font-weight: 500;
+  opacity: 0;
+  transition: opacity 600ms ease;
+}
+#wx.on { opacity: 0.85; }
+#wx svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#wx-range { font-weight: 400; opacity: 0.6; font-size: 20px; margin-left: 6px; letter-spacing: 0.02em; }
+#cal { margin-top: 6px; }
+#cal .ev {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+#cal b { font-weight: 600; opacity: 0.65; letter-spacing: 0.02em; }
+#cal svg { flex: none; width: 28px; height: 28px; fill: none; stroke: #fff; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+
+/* ---------- Top-right buttons ---------- */
+
+#top {
+  position: absolute;
+  top: var(--safe);
+  right: var(--safe);
+  display: flex;
+  gap: 20px;
+}
+.btn {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.24);
+  transition: transform 220ms var(--ease);
+}
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.45);
+  opacity: 0;
+  transition: opacity 220ms var(--ease);
+}
+.btn svg {
+  position: absolute;
+  left: 18px;
+  top: 18px;
+  width: 28px;
+  height: 28px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 220ms var(--ease);
+}
+.btn svg.on { stroke: #111; opacity: 0; }
+.btn.f { transform: scale(1.12); }
+.btn.f::before, .btn.f svg.on { opacity: 1; }
+.btn.f svg:not(.on) { opacity: 0; }
+
+/* Inputs picker */
+#picker {
+  position: absolute;
+  top: 84px;
+  right: 0;
+  width: 380px;
+  padding: 10px;
+  border-radius: 24px;
+  background: rgba(28, 28, 30, 0.86);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14), 0 24px 60px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease), visibility 0s 200ms;
+}
+#picker.open {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease);
+}
+.item {
+  position: relative;
+  height: 58px;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22px;
+  font-weight: 500;
+}
+.item::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 15px;
+  background: #fff;
+  opacity: 0;
+}
+.item span { position: relative; }
+.item .note { font-weight: 400; opacity: 0.55; font-size: 19px; }
+.item.f::before { opacity: 1; }
+.item.f { color: #111; }
+
+/* ---------- Dock ---------- */
+
+#dock {
+  position: absolute;
+  /* left, top, width and height are set by main.js from the number of apps (tiles shrink to fit the row) */
+}
+#glass {
+  position: absolute;
+  inset: 0;
+  border-radius: 36px;
+  overflow: hidden;
+  background: rgba(40, 40, 44, 0.5);
+}
+/* The pre-blurred wallpaper copy, positioned so it lines up with the wallpaper behind the dock. */
+.blur {
+  opacity: 0;
+  transition: opacity 1.5s ease;
+}
+.blur.on { opacity: 1; }
+.blur canvas { width: 1920px; height: 1080px; display: block; }
+#glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 36px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.08));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+}
+#row {
+  position: relative;
+  display: flex;
+  gap: var(--gap);
+  padding: 32px 34px 0;
+}
+
+.tile {
+  position: relative;
+  flex: none;
+  width: var(--tile-w);
+  height: var(--tile-h);
+  opacity: 0.78;
+  transition: transform 220ms var(--ease), opacity 220ms var(--ease);
+  will-change: transform;
+}
+.tile::before {
+  content: '';
+  position: absolute;
+  inset: 8px 10px 0;
+  border-radius: 22px;
+  box-shadow: 0 26px 44px rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  transition: opacity 220ms var(--ease);
+}
+.face {
+  position: absolute;
+  inset: 0;
+  border-radius: 22px;
+  overflow: hidden;
+}
+.face img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: calc(var(--tile-h) * 0.94);
+  height: calc(var(--tile-h) * 0.94);
+  transform: translate(-50%, -50%);
+}
+/* A tile without an icon (a web page, a Fire TV app): its name, large, on its colour. */
+.face .label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  text-align: center;
+  font-size: calc(var(--tile-h) * 0.2);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+/* Faint diagonal gloss */
+.face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(125deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.1) 34%, rgba(255, 255, 255, 0) 48%);
+  opacity: 0;
+  transition: opacity 220ms var(--ease);
+}
+.name {
+  position: absolute;
+  left: -40px;
+  right: -40px;
+  top: 100%;
+  margin-top: 16px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+}
+.tile.f { transform: scale(1.12); opacity: 1; }
+.tile.f::before, .tile.f .face::after { opacity: 1; }
+.tile.f .name { opacity: 1; transform: none; }
+
+/* ---------- Caption ---------- */
+
+#caption {
+  position: absolute;
+  left: var(--safe);
+  bottom: var(--safe);
+  max-width: 900px;
+  font-size: 17px;
+  line-height: 1.45;
+  opacity: 0.6;
+  transition: opacity 1s ease;
+}
+#caption.hide { opacity: 0; }
+#c-title { font-weight: 500; }
+
+/* ---------- Intro: clock, buttons and dock in within 300 ms ---------- */
+
+/* backwards, not both: once done, the animation must not pin opacity (saver and night mode change it). */
+#clock, #top, #dock { animation: rise 300ms var(--ease) backwards; }
+@keyframes rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- All apps drawer (Down from the dock) ---------- */
+
+#drawer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 600px;
+  padding: 44px 0 0;
+  border-radius: 40px 40px 0 0;
+  background: #161618;   /* opaque: no 4K blend over the art while it slides */
+  /* No outer shadow: an 80px blur on a 1920x600 panel re-rasterized at 4K cost ~15 fps on open/close. The panel
+     also stays a ready layer off-screen (will-change), so opening is a pure compositor slide. */
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  transform: translateY(100%);
+  will-change: transform;
+  visibility: hidden;
+  transition: transform 320ms var(--ease), visibility 0s 320ms;
+}
+.drawer #drawer {
+  transform: none;
+  visibility: visible;
+  transition: transform 320ms var(--ease);
+}
+#d-title {
+  padding: 0 0 0 var(--safe);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+#grid {
+  display: grid;
+  grid-template-columns: repeat(7, 200px);
+  column-gap: 46px;
+  row-gap: 64px;
+  justify-content: center;
+  margin-top: 36px;
+}
+.tile.small { width: 200px; height: 125px; will-change: auto; }
+.tile.small .face img { width: 125px; height: 125px; }
+.tile.small .face { background: #2c2c2e; }
+.tile.small .name { font-size: 18px; margin-top: 12px; }
+
+/* ---------- Night mode (sunset to sunrise): darker art, softer text ---------- */
+
+#shade::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 3s ease;
+}
+.night #shade::after { opacity: var(--night-dim, 0.5); }
+.night #clock { opacity: var(--night-text, 0.75); }
+.night #caption:not(.hide) { opacity: 0.45; }
+.night .tile:not(.f) { opacity: 0.6; }
+#clock { transition: opacity 3s ease; }
+
+/* ---------- Idle screensaver: art only, slow zoom, a small drifting clock ---------- */
+
+/* The gallery label: title, artist and year, then time · date · weather · next event, like a museum wall card. */
+#label {
+  position: absolute;
+  left: var(--safe);
+  bottom: var(--safe);
+  max-width: 1100px;
+  padding: 22px 28px 24px;
+  border-radius: 6px;
+  background: rgba(16, 16, 18, 0.55);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  opacity: 0;
+  transition: opacity 1.2s ease;
+}
+#g-title { font-size: 26px; font-weight: 500; font-style: italic; letter-spacing: 0.005em; }
+#g-artist { margin-top: 4px; font-size: 20px; opacity: 0.75; }
+#g-line { margin-top: 16px; font-size: 20px; font-weight: 500; opacity: 0.9; letter-spacing: 0.01em; }
+.saver #clock, .saver #top, .saver #dock, .saver #caption, .saver #drawer { opacity: 0; transition: opacity 1.2s ease; }
+.saver #label { opacity: 0.85; }
+.night.saver #label { opacity: 0.55; }
+/* No Ken Burns in the screensaver either: measured on the TV, the zoom on a 4K layer kept the web engine at ~75% of
+   a CPU core for as long as the screensaver ran. Still art and a clock that moves once a minute cost ~nothing. */
+
+/* Right-to-left languages: each text runs right to left, the layout stays put. */
+.rtl #date, .rtl #wx span, .rtl #cal span, .rtl #cal b, .rtl #caption div, .rtl #label div, .rtl .name, .rtl .label {
+  unicode-bidi: plaintext;
+}
+.rtl #date { letter-spacing: 0.05em; }
+
+/* ---------- Bench switches (main.js flags) ---------- */
+.no-kb .slide img { animation: none; will-change: auto; }
+.no-glass .blur { display: none; }
+.no-shadow .tile::before, .no-shadow .btn::before { box-shadow: none; }
+.no-gloss .face::after { display: none; }
+.no-shade #shade { display: none; }

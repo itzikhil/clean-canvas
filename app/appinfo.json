@@ -1,0 +1,19 @@
+{
+  "id": "io.tvlauncher.home",
+  "version": "1.0.0",
+  "vendor": "Clean Canvas",
+  "type": "web",
+  "main": "index.html",
+  "title": "Clean Canvas",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "iconColor": "#1c1c1e",
+  "resolution": "1920x1080",
+  "handlesRelaunch": true,
+  "disableBackHistoryAPI": true,
+  "requiredPermissions": [
+    "applications",
+    "applications.launcher"
+  ],
+  "spinnerOnLaunch": false
+}
