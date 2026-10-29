@@ -84,6 +84,7 @@ var Art = (function () {
       }
       urls[t] = src.indexOf('blob:') === 0 ? src : null;
       active = t;
+      if (!window.__artShown) window.__artShown = Math.round(performance.now());
       onMeta(meta);
     });
   }
@@ -94,6 +95,18 @@ var Art = (function () {
     ctx.filter = 'blur(4px)';
     ctx.drawImage(img, -12, -12, 264, 159);   // overdraw so the blur doesn't pull in transparent edges
     ctx.filter = 'none';
+    savePreview(img);
+  }
+
+  /** A 48x27 JPEG of the painting (~1-2 KB) in localStorage: index.html paints it before any script runs. */
+  function savePreview(img) {
+    try {
+      var c = document.createElement('canvas');
+      c.width = 48;
+      c.height = 27;
+      c.getContext('2d').drawImage(img, 0, 0, 48, 27);
+      localStorage.setItem('art.preview', c.toDataURL('image/jpeg', 0.6));
+    } catch (e) {}   // a canvas tainted by a file:// image, or storage full: no preview, no harm
   }
 
   // ---------- Choosing and fetching a painting ----------

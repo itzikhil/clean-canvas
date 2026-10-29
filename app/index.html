@@ -4,10 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=1920, height=1080">
 <title>Home</title>
+<link rel="preload" href="fonts/Inter-subset.ttf" as="font" type="font/ttf" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div id="wall">
+  <script>
+    // The painting's tiny blurred preview (art.js keeps it), drawn at once while the real one loads (~3 s on a cold start).
+    try { var __p = localStorage.getItem('art.preview'); if (__p) document.getElementById('wall').style.backgroundImage = 'url(' + __p + ')'; } catch (e) {}
+  </script>
   <div class="slide" id="s0"><img alt=""></div>
   <div class="slide" id="s1"><img alt=""></div>
 </div>

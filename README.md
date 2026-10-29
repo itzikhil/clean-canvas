@@ -140,6 +140,7 @@ The page renders at 4K on this TV (`devicePixelRatio` 2), so every full-screen e
 | Idle CPU, launcher + helper | ~5% of one core, about 40 MB RAM |
 | Slow Ken Burns zoom (now off everywhere) | cost 3–6 fps while browsing, ~75% of a core in the screensaver |
 | Home button → back in Clean Canvas | 0.1–0.6 s from an app, ~1–1.5 s from HDMI |
+| Cold start → first paint (painting preview, clock, dock) | ~0.3–0.4 s; the full painting at ~2.2 s |
 
 ## Security and privacy
 

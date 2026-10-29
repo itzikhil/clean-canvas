@@ -445,7 +445,12 @@
     if (p.lunaTest) lunaTest(p.lunaTest, p.report);
     if (p.saverTest) enterSaver();
     if (p.eventLog) eventLog(p.eventLog);
-    if (p.timingReport) post(p.timingReport, {boot: boot});
+    if (p.timingReport) {
+      var paints = {};
+      (performance.getEntriesByType('paint') || []).forEach(function (e) { paints[e.name] = Math.round(e.startTime); });
+      post(p.timingReport, {boot: boot, paints: paints, artShownAt: window.__artShown,
+        fonts: document.fonts && document.fonts.status});
+    }
     if (p.artReport) post(p.artReport, {art: $('c-title').textContent, by: $('c-meta').textContent, calendar: $('cal').textContent, weather: $('wx').textContent, label: $('g-line').textContent,
       calendarEvents: Calendar._sources().map(function (x) { return (x.cfg.name || '') + ':' + x.events.length; })});
   });

@@ -3,7 +3,9 @@
   /* Inter subset: Latin, weights 200-600 (82 KB instead of 880 KB; see README). */
   src: url('fonts/Inter-subset.ttf') format('truetype');
   font-weight: 200 600;
-  font-display: block;
+  /* swap: text never waits for the font (with block it held all text back until ~2.8 s on a cold start, measured);
+     the font is preloaded in index.html, so the swap usually happens before the first frame anyway. */
+  font-display: swap;
 }
 
 /* Layout constants (px). main.js reads the dock's rect once to align its blurred backdrop. */
@@ -34,6 +36,7 @@ body { pointer-events: none; }
 /* ---------- Wallpaper ---------- */
 
 #wall, #shade { position: absolute; inset: 0; }
+#wall { background-size: cover; background-position: center; }   /* the blurred preview, until the painting shows */
 .slide {
   position: absolute;
   inset: 0;
