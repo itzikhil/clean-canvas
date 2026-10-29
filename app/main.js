@@ -79,9 +79,15 @@
       parts.push(Weather.word(w.desc) + ', ' + w.max + '° ' + I18N.t('and') + ' ' + w.min + '°' +
         (showRain(w) ? ', ' + w.rain + I18N.t('rainChance') : ''));
     }
-    Calendar.lines().forEach(function (l) { parts.push((l.name ? l.name + ': ' : '') + l.text); });
-    var line = parts.join('  ·  ');
-    if ($('g-line').textContent !== line) $('g-line').textContent = line;
+    // First line: time · date · weather; then one line per calendar, like the details on a wall card.
+    var lines = [parts.join('  ·  ')].concat(Calendar.lines().map(function (l) {
+      return (l.name ? l.name + ': ' : '') + l.text;
+    }));
+    var key = lines.join('\n'), box = $('g-line');
+    if (box.getAttribute('data-k') === key) return;
+    box.setAttribute('data-k', key);
+    box.innerHTML = lines.map(function () { return '<div></div>'; }).join('');
+    lines.forEach(function (text, i) { box.children[i].textContent = text; });
   }
 
   // ---------- Dock ----------

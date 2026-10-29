@@ -59,6 +59,13 @@ var Art = (function () {
     var img = slides[t].firstElementChild;
     img.src = src;
     return img.decode().catch(function () {}).then(function () {
+      // A painting that didn't load (a broken download, a revoked URL) must never replace the one on screen: that
+      // left the wallpaper black. Keep what's showing; the bundled painting is the fallback on a cold start.
+      if (!img.naturalWidth) {
+        img.removeAttribute('src');
+        if (active < 0 && src !== DEFAULT.src) return show(DEFAULT.src, DEFAULT.meta, instant);
+        return;
+      }
       paintBlur(img, blurs[t].firstElementChild);
       if (!instant && window.Home) window.Home.still(1800);   // no zoom during the crossfade
       var old = active;
