@@ -5,9 +5,13 @@ Every few minutes it reads your Emby "Continue watching" list (log in once with 
 16+ (and repeats of the same title), saves small landscape covers, and serves feed.json and the covers on the home
 network. The launcher shows them as a row above the dock while the Emby tile is focused.
 
-    python3 hub/hub.py [--port 8787] [--every 300] [--max-age 16]
+OK on a card opens Emby on the TV and asks the hub to POST /play?id=<item>: the hub waits for the TV's Emby app to
+come online and tells it to play that title from where you stopped (Emby's own remote control, like its phone app).
 
-Read-only towards Emby. Serves only feed.json and covers/*.jpg; nothing else on this computer.
+    python3 hub/hub.py [--port 8787] [--every 300] [--max-age 16] [--player "Emby for LG"]
+
+Towards Emby it only reads, except that one "play this" command. It serves only feed.json and covers/*.jpg, and
+plays only titles that are in the current feed; nothing else on this computer.
 """
 import argparse
 import json
@@ -32,12 +36,31 @@ def log(*a):
     print(time.strftime('%Y-%m-%d %H:%M:%S'), *a, flush=True)
 
 
-def get(s, path, raw=False):
-    req = urllib.request.Request(s['base'] + path, headers={
+def get(s, path, raw=False, post=False):
+    req = urllib.request.Request(s['base'] + path, data=b'' if post else None, headers={
         'X-Emby-Authorization': AUTH, 'X-Emby-Token': s['token'], 'Accept': '*/*' if raw else 'application/json'})
     with urllib.request.urlopen(req, timeout=30) as r:
         data = r.read()
-    return data if raw else json.loads(data)
+    return data if raw or post else json.loads(data)
+
+
+def play(item_id, player):
+    """Start item_id on the TV's Emby app at its resume point, once that app is online (it may still be starting)."""
+    s = json.load(open(LOGIN))
+    t0 = time.time()
+    while time.time() - t0 < 30:
+        live = [x for x in get(s, '/Sessions')
+                if x.get('Client') == player and x.get('UserId') == s['user'] and x.get('SupportsRemoteControl')]
+        if live:
+            break
+        time.sleep(1)
+    else:
+        return log('play: no %s online within 30 s' % player)
+    session = max(live, key=lambda x: x.get('LastActivityDate') or '')
+    ticks = (get(s, '/Users/%s/Items/%s' % (s['user'], item_id)).get('UserData') or {}).get('PlaybackPositionTicks') or 0
+    get(s, '/Sessions/%s/Playing?ItemIds=%s&PlayCommand=PlayNow&StartPositionTicks=%d' % (session['Id'], item_id, ticks),
+        post=True)
+    log('play: %s at %d min after %.1f s' % (item_id, ticks // 600000000, time.time() - t0))
 
 
 # Age ratings: the number in the rating ('FSK-16', 'DE-12', '15', '18+'), else the US/UK letter ratings.
@@ -163,6 +186,20 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def do_POST(self):
+        m = re.fullmatch(r'/play\?id=(\w+)', self.path)
+        try:
+            ids = {i['id'] for i in json.load(open(os.path.join(OUT, 'feed.json')))['continueWatching']}
+        except (OSError, ValueError, KeyError):
+            ids = set()
+        if not m or m.group(1) not in ids:   # only titles the row shows: nothing else can be started from here
+            return self.send_error(404)
+        threading.Thread(target=self.server.play, args=(m.group(1),), daemon=True).start()
+        self.send_response(202)   # the launcher doesn't wait: Emby may need a few seconds to start
+        self.send_header('Content-Length', '0')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+
     def log_message(self, *a):
         pass
 
@@ -172,11 +209,20 @@ def main():
     p.add_argument('--port', type=int, default=8787)
     p.add_argument('--every', type=int, default=300, help='seconds between refreshes')
     p.add_argument('--max-age', type=int, default=16, help='hide titles rated this age or older (0: hide none)')
+    p.add_argument('--player', default='Emby for LG', help="the TV's Emby app, as Emby names its client")
     a = p.parse_args()
     os.makedirs(COVERS, exist_ok=True)
     threading.Thread(target=loop, args=(a.every, a.max_age), daemon=True).start()
     log('serving on port %d' % a.port)
-    ThreadingHTTPServer(('0.0.0.0', a.port), Handler).serve_forever()
+    server = ThreadingHTTPServer(('0.0.0.0', a.port), Handler)
+
+    def play_logged(item_id):
+        try:
+            play(item_id, a.player)
+        except Exception as e:
+            log('play failed:', repr(e))
+    server.play = play_logged
+    server.serve_forever()
 
 
 if __name__ == '__main__':

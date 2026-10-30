@@ -165,7 +165,7 @@
 
   var CARD = 256 + 24, CARDS_SHOWN = 6;   // card width + gap (style.css); cards that fit inside the safe area
   var hubDock = C.hub ? dockIds.indexOf(C.hub.app) : -1;   // the dock tile whose row this is
-  var shelfRow = $('sh-row'), shelfTiles = [], shelfKey = '', shelfIdx = 0;
+  var shelfRow = $('sh-row'), shelfTiles = [], shelfList = [], shelfKey = '', shelfIdx = 0;
   $('sh-title').textContent = I18N.t('continueWatching');
 
   function renderShelf(list) {
@@ -175,6 +175,7 @@
     if (zone === 'shelf') focus('dock', hubDock);
     shelfRow.innerHTML = '';
     shelfTiles = [];
+    shelfList = list;
     shelfIdx = 0;
     list.forEach(function (it) {
       var card = document.createElement('div');
@@ -193,6 +194,14 @@
   /** The row shows while the hub's dock tile, or the row itself, has focus. */
   function showShelf() {
     root.classList.toggle('shelf', shelfTiles.length > 0 && (zone === 'shelf' || (zone === 'dock' && idx === hubDock)));
+  }
+
+  /** OK on a card: open the app, and the hub tells it to play that title from where you stopped (hub/hub.py). */
+  function playShelf(i) {
+    TV.launch(C.hub.app);
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', C.hub.url + '/play?id=' + encodeURIComponent(shelfList[i].id));
+    xhr.send();
   }
 
   function loadShelf() {
@@ -286,7 +295,7 @@
   function activate() {
     if (zone === 'dock') open(C.apps[idx]);
     else if (zone === 'drawer') open(drawerApps[idx]);
-    else if (zone === 'shelf') TV.launch(C.hub.app);
+    else if (zone === 'shelf') playShelf(idx);
     else if (zone === 'top') {
       if (idx === 0) openPicker();
       else if (idx === 1) lgHome();

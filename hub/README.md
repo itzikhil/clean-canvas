@@ -4,7 +4,8 @@ An always-on computer at home (a Mac mini, a NAS, a Raspberry Pi with Python 3) 
 
 - **Every 5 minutes** the hub reads your Emby "Continue watching" list. It leaves out titles rated 16+ and repeats of the same title (`--max-age 0` keeps everything), and saves small landscape covers. Titles without a rating stay in: no rating is not a guessed rating.
 - **It serves only `feed.json` and `covers/*.jpg`** on port 8787, on your home network. Don't forward that port in your router.
-- **Read-only towards Emby.** Only a login token is kept, in `~/.clean-canvas/emby.json` (readable by you only), never your password.
+- **OK on a card plays it** from where you stopped: the launcher opens Emby and the hub tells the TV's Emby app to play that title (Emby's own remote control). Only titles in the row can be started this way.
+- **Otherwise read-only towards Emby.** Only a login token is kept, in `~/.clean-canvas/emby.json` (readable by you only), never your password.
 
 ## Set up (on the always-on computer)
 
