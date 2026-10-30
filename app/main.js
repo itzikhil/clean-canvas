@@ -161,6 +161,52 @@
     });
   }
 
+  // ---------- Continue watching: the hub's row (hub/hub.py on an always-on computer) ----------
+
+  var CARD = 256 + 24, CARDS_SHOWN = 6;   // card width + gap (style.css); cards that fit inside the safe area
+  var hubDock = C.hub ? dockIds.indexOf(C.hub.app) : -1;   // the dock tile whose row this is
+  var shelfRow = $('sh-row'), shelfTiles = [], shelfKey = '', shelfIdx = 0;
+  $('sh-title').textContent = I18N.t('continueWatching');
+
+  function renderShelf(list) {
+    var key = JSON.stringify(list);
+    if (key === shelfKey) return;   // unchanged: no DOM work
+    shelfKey = key;
+    if (zone === 'shelf') focus('dock', hubDock);
+    shelfRow.innerHTML = '';
+    shelfTiles = [];
+    shelfIdx = 0;
+    list.forEach(function (it) {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<img alt=""><div class="info"><b></b><span></span></div>' + (it.pct ? '<i><u></u></i>' : '');
+      card.firstChild.src = C.hub.url + '/' + it.img;
+      card.querySelector('b').textContent = it.title;
+      card.querySelector('span').textContent = it.sub;
+      if (it.pct) card.querySelector('u').style.width = it.pct + '%';
+      shelfRow.appendChild(card);
+      shelfTiles.push(card);
+    });
+    showShelf();
+  }
+
+  /** The row shows while the hub's dock tile, or the row itself, has focus. */
+  function showShelf() {
+    root.classList.toggle('shelf', shelfTiles.length > 0 && (zone === 'shelf' || (zone === 'dock' && idx === hubDock)));
+  }
+
+  function loadShelf() {
+    if (hubDock < 0 || document.hidden) return;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', C.hub.url + '/feed.json');
+    xhr.timeout = 5000;
+    xhr.onload = function () {
+      try { renderShelf(JSON.parse(xhr.responseText).continueWatching || []); } catch (e) { renderShelf([]); }
+    };
+    xhr.onerror = xhr.ontimeout = function () { renderShelf([]); };   // hub away: no row (its covers would not load)
+    xhr.send();
+  }
+
   // ---------- Inputs picker ----------
 
   var picker = $('picker'), items = [];
@@ -192,12 +238,17 @@
   function focus(z, i) {
     still();
     lastInput = Date.now();
-    var list = z === 'dock' ? tiles : z === 'top' ? buttons : z === 'picker' ? items : cells;
+    var list = z === 'dock' ? tiles : z === 'top' ? buttons : z === 'picker' ? items : z === 'shelf' ? shelfTiles : cells;
     i = Math.max(0, Math.min(list.length - 1, i));
     zone = z;
     idx = i;
     if (z === 'top') topIdx = i;
     if (z === 'dock') dockIdx = i;
+    if (z === 'shelf') {
+      shelfIdx = i;
+      shelfRow.style.transform = 'translateX(' + -Math.max(0, i - CARDS_SHOWN + 1) * CARD + 'px)';
+    }
+    if (hubDock >= 0) showShelf();
     var el = list[i];
     if (el === focused) return;
     if (focused) focused.classList.remove('f');
@@ -235,6 +286,7 @@
   function activate() {
     if (zone === 'dock') open(C.apps[idx]);
     else if (zone === 'drawer') open(drawerApps[idx]);
+    else if (zone === 'shelf') TV.launch(C.hub.app);
     else if (zone === 'top') {
       if (idx === 0) openPicker();
       else if (idx === 1) lgHome();
@@ -252,8 +304,14 @@
     if (zone === 'dock') {
       if (key === KEY.LEFT) focus('dock', idx - 1);
       else if (key === KEY.RIGHT) focus('dock', idx + 1);
+      else if (key === KEY.UP && idx === hubDock && shelfTiles.length) focus('shelf', shelfIdx);
       else if (key === KEY.UP) focus('top', topIdx);
       else if (key === KEY.DOWN) openDrawer();
+    } else if (zone === 'shelf') {
+      if (key === KEY.LEFT) focus('shelf', idx - 1);
+      else if (key === KEY.RIGHT) focus('shelf', idx + 1);
+      else if (key === KEY.UP) focus('top', topIdx);
+      else if (key === KEY.DOWN) focus('dock', hubDock);
     } else if (zone === 'top') {
       if (key === KEY.LEFT) focus('top', idx - 1);
       else if (key === KEY.RIGHT) focus('top', idx + 1);
@@ -274,6 +332,7 @@
   function back() {
     if (zone === 'picker') closePicker();
     else if (zone === 'drawer') closeDrawer();
+    else if (zone === 'shelf') focus('dock', hubDock);
     else if (zone === 'top') focus('dock', topToDock(idx));
   }
 
@@ -414,6 +473,8 @@
       Weather.onUpdate(renderWeather);
       Weather.start();
       Calendar.start(function () { renderCalendar(); renderLabel(); });
+      loadShelf();
+      setInterval(loadShelf, 5 * 60000);   // the hub refreshes every 5 min too
     }, 0);
   });
 
@@ -422,6 +483,7 @@
     if (saver) exitSaver();
     tick();
     Art.refresh();
+    loadShelf();   // back from watching: the list has probably moved on
     showCaption();
     noteInput();
   });
@@ -586,6 +648,7 @@
       root.classList.toggle('night', m === 'night');
       if (m === 'home' || m === 'night') focus('dock', 2);
       else if (m === 'drawer') { openDrawer(); focus('drawer', 8); }
+      else if (m === 'shelf') { focus('dock', hubDock); focus('shelf', 1); }
       else if (m === 'picker') { focus('top', 0); openPicker(); focus('picker', 2); }
       else if (m === 'gallery') enterSaver();
       clearTimeout(clockTimer);   // hold the night/day state for the shot

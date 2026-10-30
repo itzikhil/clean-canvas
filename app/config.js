@@ -13,6 +13,9 @@ window.CONFIG = {
   browserApp: 'com.webos.app.browser',
   // A Fire TV Stick for `firetv` tiles: {host: '<ip>', input: 'com.webos.app.hdmiN'} (see README).
   fireTv: null,
+  // A hub on an always-on computer at home (hub/README.md): {url: 'http://<ip>:8787', app: '<dock app id>'}. Its
+  // "Continue watching" row shows above the dock while that app's tile is focused. null: no row.
+  hub: null,
 
   inputs: [
     {id: 'com.webos.app.livetv', label: 'Live TV'},

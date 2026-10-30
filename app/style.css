@@ -342,6 +342,65 @@ body { pointer-events: none; }
 .tile.f::before, .tile.f .face::after { opacity: 1; }
 .tile.f .name { opacity: 1; transform: none; }
 
+/* ---------- Continue watching: the hub's row, above the dock while its app is focused (main.js) ---------- */
+
+#shelf {
+  position: absolute;
+  left: var(--safe);
+  right: 0;
+  top: 470px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(14px);
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease), visibility 0s 220ms;
+}
+.shelf #shelf {
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  transition: opacity 220ms var(--ease), transform 220ms var(--ease);
+}
+#sh-title {
+  margin-bottom: 18px;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+#sh-row {
+  display: flex;
+  gap: 24px;   /* main.js: CARD = card width + this gap */
+  transition: transform 220ms var(--ease);
+}
+/* Covers only, no shadows: up to 10 cards come and go with the focus, so each one stays a cheap layer. */
+.card {
+  position: relative;
+  flex: none;
+  width: 256px;
+  height: 144px;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #2c2c2e;
+  opacity: 0.82;
+  transition: transform 220ms var(--ease), opacity 220ms var(--ease);
+}
+.card img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.card .info {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 30px 14px 15px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.78), rgba(0, 0, 0, 0));
+}
+.card b, .card span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.card b { font-size: 17px; font-weight: 600; }
+.card span { margin-top: 2px; font-size: 13px; opacity: 0.75; }
+/* How far in: a thin bar along the bottom edge */
+.card i { position: absolute; left: 14px; right: 14px; bottom: 7px; height: 3px; border-radius: 2px; background: rgba(255, 255, 255, 0.25); }
+.card u { display: block; height: 100%; border-radius: 2px; background: #fff; }
+.card.f { transform: scale(1.1); opacity: 1; }
+
 /* ---------- Caption ---------- */
 
 #caption {
@@ -432,7 +491,7 @@ body { pointer-events: none; }
 .night #shade::after { opacity: var(--night-dim, 0.5); }
 .night #clock { opacity: var(--night-text, 0.75); }
 .night #caption:not(.hide) { opacity: 0.45; }
-.night .tile:not(.f) { opacity: 0.6; }
+.night .tile:not(.f), .night .card:not(.f) { opacity: 0.6; }
 #clock { transition: opacity 3s ease; }
 
 /* ---------- Idle screensaver: art only, slow zoom, a small drifting clock ---------- */
@@ -464,7 +523,7 @@ body { pointer-events: none; }
   letter-spacing: 0.01em;
 }
 #g-line div + div { margin-top: 2px; }
-.saver #clock, .saver #top, .saver #dock, .saver #caption, .saver #drawer { opacity: 0; transition: opacity 1.2s ease; }
+.saver #clock, .saver #top, .saver #dock, .saver #caption, .saver #drawer, .saver #shelf { opacity: 0; transition: opacity 1.2s ease; }
 .saver #label { opacity: 0.94; }
 .night.saver #label { opacity: 0.42; }   /* a light card stays gentle in a dark room */
 /* No Ken Burns in the screensaver either: measured on the TV, the zoom on a 4K layer kept the web engine at ~75% of

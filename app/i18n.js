@@ -7,20 +7,20 @@ var I18N = (function () {
 
   var STRINGS = {
     en: {today: 'Today', tomorrow: 'Tomorrow', meeting: 'Meeting', tentative: 'Meeting (tentative)', rain: '% rain',
-      rainChance: '% chance of rain', high: 'H', low: 'L', and: 'and', allApps: 'All apps',
+      rainChance: '% chance of rain', high: 'H', low: 'L', and: 'and', allApps: 'All apps', continueWatching: 'Continue watching',
       clear: 'Clear', partly: 'Partly cloudy', cloud: 'Cloudy', fog: 'Fog', drizzle: 'Rain', snow: 'Snow', storm: 'Thunderstorms'},
     de: {today: 'Heute', tomorrow: 'Morgen', meeting: 'Termin', tentative: 'Termin (vorläufig)', rain: '% Regen',
-      rainChance: '% Regenwahrscheinlichkeit', high: 'H', low: 'T', and: 'und', allApps: 'Alle Apps',
+      rainChance: '% Regenwahrscheinlichkeit', high: 'H', low: 'T', and: 'und', allApps: 'Alle Apps', continueWatching: 'Weiterschauen',
       clear: 'Klar', partly: 'Teils bewölkt', cloud: 'Bewölkt', fog: 'Nebel', drizzle: 'Regen', snow: 'Schnee', storm: 'Gewitter'},
     he: {today: 'היום', tomorrow: 'מחר', meeting: 'פגישה', tentative: 'פגישה (טנטטיבית)', rain: '% גשם',
-      rainChance: '% סיכוי לגשם', high: 'מקס׳', low: 'מינ׳', and: 'עד', allApps: 'כל האפליקציות',
+      rainChance: '% סיכוי לגשם', high: 'מקס׳', low: 'מינ׳', and: 'עד', allApps: 'כל האפליקציות', continueWatching: 'להמשיך לצפות',
       clear: 'בהיר', partly: 'מעונן חלקית', cloud: 'מעונן', fog: 'ערפל', drizzle: 'גשם', snow: 'שלג', storm: 'סופות רעמים'},
     es: {today: 'Hoy', tomorrow: 'Mañana', meeting: 'Reunión', tentative: 'Reunión (provisional)', rain: '% lluvia',
-      rainChance: '% de probabilidad de lluvia', high: 'Máx', low: 'Mín', and: 'y', allApps: 'Todas las apps',
+      rainChance: '% de probabilidad de lluvia', high: 'Máx', low: 'Mín', and: 'y', allApps: 'Todas las apps', continueWatching: 'Seguir viendo',
       clear: 'Despejado', partly: 'Parcialmente nublado', cloud: 'Nublado', fog: 'Niebla', drizzle: 'Lluvia', snow: 'Nieve',
       storm: 'Tormentas'},
     fr: {today: 'Aujourd’hui', tomorrow: 'Demain', meeting: 'Réunion', tentative: 'Réunion (provisoire)', rain: '% pluie',
-      rainChance: '% de risque de pluie', high: 'Max', low: 'Min', and: 'et', allApps: 'Toutes les apps',
+      rainChance: '% de risque de pluie', high: 'Max', low: 'Min', and: 'et', allApps: 'Toutes les apps', continueWatching: 'Reprendre',
       clear: 'Dégagé', partly: 'Partiellement nuageux', cloud: 'Nuageux', fog: 'Brouillard', drizzle: 'Pluie', snow: 'Neige',
       storm: 'Orages'}
   };
