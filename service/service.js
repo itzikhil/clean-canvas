@@ -181,7 +181,8 @@ function restartLauncher(cold) {
 function onForeground(id) {
   var prev = foreground;
   foreground = id;
-  if (id && id !== LG_HOME) lgMode = false;   // any other app, or the launcher: LG-home mode ends
+  // Any other app, the launcher, or the TV turning off ('') ends LG-home mode, so the next power-on is ours again.
+  if (id !== LG_HOME) lgMode = false;
   if (id !== LG_HOME) { note(id, ''); return; }
   if (prev === LG_HOME) { note(id, 'still LG home'); return; }
   if (!takeover) { note(id, 'takeover off'); return; }
