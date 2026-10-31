@@ -30,15 +30,18 @@ Now and then the TV restarts fully, even with Quick Start+ on, and after that no
 
 ```sh
 printf '{"ip": "%s", "key": "%s"}' 192.168.1.50 "$(cat ~/.ssh/tvlauncher_ssap_home_192_168_1_50)" > ~/.clean-canvas/tv.json
-chmod 600 ~/.clean-canvas/tv.json   # then run hub/install.sh again
+chmod 600 ~/.clean-canvas/tv.json
+sudo sh hub/install.sh --daemon     # once; asks for your Mac password
 ```
+
+The `--daemon` install is needed on macOS: Local Network privacy stops a login agent's Python from reaching the TV ("No route to host" in the log, often without any prompt), while launchd daemons are exempt. The daemon still runs as you, not as root; after that, update it with the same sudo command.
 
 If the TV ever refuses that key, the hub stops watching rather than make the TV ask to pair again and again.
 
 ## Remove
 
 ```sh
-sh hub/install.sh --remove
+sh hub/install.sh --remove          # sudo sh … --remove if it runs as a daemon
 python3 ~/.clean-canvas/emby_login.py --forget   # logs out and deletes the token
 ```
 
