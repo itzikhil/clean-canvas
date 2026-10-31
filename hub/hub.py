@@ -10,6 +10,9 @@ come online and tells it to play that title from where you stopped (Emby's own r
 
     python3 hub/hub.py [--port 8787] [--every 300] [--max-age 16] [--player "Emby for LG"]
 
+With ~/.clean-canvas/tv.json it also watches the TV: after the TV restarts fully, nothing of ours runs on it, so the
+hub opens the launcher once LG's home has stayed up for 8 s after power-on (see watch_tv).
+
 Towards Emby it only reads, except that one "play this" command. It serves only feed.json and covers/*.jpg, and
 plays only titles that are in the current feed; nothing else on this computer.
 """
@@ -165,6 +168,71 @@ def loop(every, max_age):
         time.sleep(every)
 
 
+TV = os.path.join(HOME, 'tv.json')   # {"ip": ..., "key": the helper's SSAP client key}: turns on watch_tv
+TV_APP, LG_HOME = 'io.tvlauncher.home', 'com.webos.app.home'
+
+
+def watch_tv(ip, key):
+    """Now and then the TV restarts fully (Quick Start+ on or not), and after that nothing of ours runs: LG's home
+    stays up. The TV can't autostart a Developer Mode app, so this does it: when the TV comes up showing LG's home and
+    it is still there 8 s later (the helper takes over in ~3 s when it runs), it opens the launcher, whose helper then
+    works as usual. Only right after connecting: once any other app is seen, Home is the helper's job.
+    """
+    import socket
+    import tvlib   # copied next to this file by install.sh, with ssap_manifest.json
+    manifest = json.load(open(os.path.join(HOME, 'ssap_manifest.json')))
+    manifest.pop('_comment', None)
+    state = None   # logged only when it changes: the TV is off for hours every day
+
+    def report(now):
+        nonlocal state
+        if now != state:
+            state = now
+            log('tv:', now)
+    while True:
+        try:
+            ws = tvlib.Socket(ip)
+        except OSError as e:
+            report('not reachable (%s)' % (e.strerror or e.__class__.__name__))   # off, or still starting
+            time.sleep(5)
+            continue
+        try:
+            ws.send({'type': 'register', 'id': 'register',
+                     'payload': {'client-key': key, 'pairingType': 'PROMPT', 'forcePairing': False, 'manifest': manifest}})
+            fresh, due, fg = True, None, None
+            while True:
+                try:
+                    m = ws.receive(max(0.1, due - time.time()) if due else 120)
+                except socket.timeout:
+                    if not due:
+                        raise OSError('TV quiet')
+                    due = None
+                    if fg == LG_HOME:
+                        ws.send({'type': 'request', 'id': 'launch', 'uri': 'ssap://system.launcher/launch',
+                                 'payload': {'id': TV_APP}})
+                        log('tv: LG home after power-on, opened the launcher')
+                        fresh = False
+                    continue
+                if m.get('id') == 'register' and m.get('type') == 'response' and 'pairingType' in (m.get('payload') or {}):
+                    # The key was refused and the TV is showing a pairing prompt: never repeat that every few seconds.
+                    return log('tv: key not accepted (the TV asks to pair); TV watch off until the hub restarts')
+                if m.get('type') == 'registered':
+                    report('connected')
+                    ws.send({'type': 'subscribe', 'id': 'fg', 'uri': 'ssap://com.webos.applicationManager/getForegroundAppInfo',
+                             'payload': {}})
+                elif m.get('id') == 'fg':
+                    fg = (m.get('payload') or {}).get('appId') or ''
+                    if fg == LG_HOME and fresh and not due:
+                        due = time.time() + 8
+                    elif fg and fg != LG_HOME:
+                        fresh = False
+        except (OSError, ValueError):
+            pass
+        finally:
+            ws.close()
+        time.sleep(5)
+
+
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split('?')[0]
@@ -213,6 +281,10 @@ def main():
     a = p.parse_args()
     os.makedirs(COVERS, exist_ok=True)
     threading.Thread(target=loop, args=(a.every, a.max_age), daemon=True).start()
+    if os.path.exists(TV):
+        tv = json.load(open(TV))
+        threading.Thread(target=watch_tv, args=(tv['ip'], tv['key']), daemon=True).start()
+        log('watching the TV at %s for power-on' % tv['ip'])
     log('serving on port %d' % a.port)
     server = ThreadingHTTPServer(('0.0.0.0', a.port), Handler)
 

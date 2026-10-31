@@ -16,6 +16,10 @@ fi
 PY=$(command -v python3)
 mkdir -p "$DIR" && chmod 700 "$DIR"
 cp "$(dirname "$0")/hub.py" "$(dirname "$0")/emby_login.py" "$DIR/"
+# For the power-on watch (only used when $DIR/tv.json exists): the SSAP client and the helper's permissions.
+for f in tvlib.py ssap_manifest.json; do
+  if [ -f "$(dirname "$0")/$f" ]; then cp "$(dirname "$0")/$f" "$DIR/"; else cp "$(dirname "$0")/../tools/$f" "$DIR/"; fi
+done
 cat > "$PLIST" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
